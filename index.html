@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AC Repair Leads CRM</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
+  .topbar{background:#fff;padding:14px 18px;border-bottom:1px solid #e5e5e5;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100}
+  .topbar h1{font-size:17px;font-weight:600;color:#1a1a1a}
+  .topbar p{font-size:12px;color:#888;margin-top:2px}
+  .sync-btn{font-size:12px;padding:7px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:500}
+  .sync-btn:hover{background:#f5f5f5}
+  .sync-btn svg{width:13px;height:13px}
+  .toolbar{background:#fff;padding:10px 18px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-bottom:1px solid #e5e5e5}
+  .flt{font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid #ddd;background:#fff;color:#666;cursor:pointer;font-weight:500}
+  .flt.on{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+  .search{flex:1;min-width:160px;font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;outline:none}
+  .search:focus{border-color:#999}
+  .stats{display:flex;gap:8px;padding:14px 18px;flex-wrap:wrap;background:#f5f5f5}
+  .stat{flex:1;min-width:70px;background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #eee}
+  .stat-n{font-size:24px;font-weight:600;color:#1a1a1a}
+  .stat-l{font-size:11px;color:#888;margin-top:2px}
+  .cards{display:flex;flex-direction:column;gap:10px;padding:0 14px 30px}
+  .card{background:#fff;border:1px solid #eee;border-radius:12px;padding:14px 16px}
+  .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .avatar{width:40px;height:40px;border-radius:50%;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#4F46E5;flex-shrink:0}
+  .cname{font-size:15px;font-weight:600;color:#1a1a1a}
+  .cmeta{font-size:12px;color:#888;margin-top:2px}
+  .badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;cursor:pointer;border:none;white-space:nowrap}
+  .b-open{background:#EFF6FF;color:#1D4ED8}
+  .b-working{background:#FFFBEB;color:#B45309}
+  .b-closed{background:#F0FDF4;color:#15803D}
+  .desc{font-size:12px;color:#666;background:#fafafa;border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.6;border:1px solid #f0f0f0}
+  .card-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .act-btn{display:flex;align-items:center;gap:5px;font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;cursor:pointer;text-decoration:none;font-weight:500}
+  .act-btn:hover{background:#f5f5f5}
+  .act-btn.call{color:#1D4ED8;border-color:#BFDBFE;background:#EFF6FF}
+  .act-btn.wa{color:#15803D;border-color:#BBF7D0;background:#F0FDF4}
+  .remark-row{display:flex;gap:6px;margin-top:10px;border-top:1px solid #f0f0f0;padding-top:10px}
+  .remark-inp{flex:1;font-size:12px;padding:6px 9px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;outline:none}
+  .remark-inp:focus{border-color:#999}
+  .save-btn{font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;cursor:pointer;font-weight:500}
+  .save-btn:hover{background:#f5f5f5}
+  .remark-saved{font-size:11px;color:#888;font-style:italic;margin-top:5px}
+  .url-setup{background:#fff;border:1px solid #eee;border-radius:12px;padding:18px;margin:14px;display:flex;flex-direction:column;gap:12px}
+  .url-setup p{font-size:14px;font-weight:600;color:#1a1a1a}
+  .url-setup small{font-size:12px;color:#666;line-height:1.6}
+  .url-inp{font-size:13px;padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;width:100%;outline:none}
+  .url-inp:focus{border-color:#999}
+  .code-block{font-size:11px;background:#f8f8f8;padding:10px 12px;border-radius:8px;display:block;margin-top:4px;line-height:1.7;white-space:pre;overflow-x:auto;border:1px solid #eee;font-family:monospace}
+  .empty{text-align:center;padding:40px 20px;color:#888;font-size:13px}
+  .spin{display:inline-block;width:12px;height:12px;border:2px solid #ddd;border-top-color:#888;border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .status-menu{position:absolute;top:110%;right:0;background:#fff;border:1px solid #ddd;border-radius:10px;z-index:200;min-width:130px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+  .status-menu button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:9px 13px;font-size:13px;border:none;background:none;color:#1a1a1a;cursor:pointer;font-weight:500}
+  .status-menu button:hover{background:#f5f5f5}
+  .status-menu button:first-child{border-radius:10px 10px 0 0}
+  .status-menu button:last-child{border-radius:0 0 10px 10px}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .dot-open{background:#1D4ED8}
+  .dot-working{background:#B45309}
+  .dot-closed{background:#15803D}
+  .rel{position:relative}
+  @media(max-width:480px){.stats{gap:6px}.stat{padding:10px 12px}.stat-n{font-size:20px}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>⚡ AC Repair Leads</h1>
+    <p id="sync-status">Paste your Apps Script URL below to load data</p>
+  </div>
+  <button class="sync-btn" onclick="syncData()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+    Sync Sheet
+  </button>
+</div>
+
+<div class="url-setup" id="setup-box">
+  <p>🔗 Connect your Google Sheet</p>
+  <small>Follow these steps once to connect your sheet:</small>
+  <small><strong>Step 1:</strong> Open your Google Sheet → Extensions → Apps Script<br>
+  <strong>Step 2:</strong> Delete existing code and paste this:</small>
+  <code class="code-block">function doGet() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var rows = data.slice(1).map(function(r){
+    var obj={};
+    headers.forEach(function(h,i){ obj[h]=r[i]; });
+    return obj;
+  });
+  return ContentService
+    .createTextOutput(JSON.stringify(rows))
+    .setMimeType(ContentService.MimeType.JSON);
+}</code>
+  <small><strong>Step 3:</strong> Click Deploy → New Deployment → Web App<br>
+  Execute as: <strong>Me</strong> | Access: <strong>Anyone</strong> → Deploy → Copy URL</small>
+  <input class="url-inp" id="sheet-url" placeholder="https://script.google.com/macros/s/YOUR_ID/exec" />
+  <button class="sync-btn" onclick="syncData()" style="align-self:flex-start;padding:8px 16px">Load Data →</button>
+</div>
+
+<div class="stats" id="stats-row" style="display:none"></div>
+<div class="toolbar" id="toolbar" style="display:none">
+  <button class="flt on" onclick="setFilter('all',this)">All</button>
+  <button class="flt" onclick="setFilter('open',this)">Open</button>
+  <button class="flt" onclick="setFilter('working',this)">Working</button>
+  <button class="flt" onclick="setFilter('closed',this)">Closed</button>
+  <input class="search" id="search" placeholder="Search name, area, phone..." oninput="renderCards()">
+</div>
+<div class="cards" id="cards-container"></div>
+
+<script>
+var allLeads=[];
+var statuses={};
+var remarks={};
+var currentFilter='all';
+
+function init(){
+  try{
+    var s=localStorage.getItem('ac_statuses');if(s)statuses=JSON.parse(s);
+    var r=localStorage.getItem('ac_remarks');if(r)remarks=JSON.parse(r);
+    var u=localStorage.getItem('ac_url');if(u)document.getElementById('sheet-url').value=u;
+  }catch(e){}
+  var savedUrl=document.getElementById('sheet-url').value;
+  if(savedUrl)syncData();
+}
+
+async function syncData(){
+  var url=document.getElementById('sheet-url').value.trim();
+  if(!url){document.getElementById('sync-status').textContent='Please paste your Apps Script URL first';return;}
+  try{localStorage.setItem('ac_url',url);}catch(e){}
+  document.getElementById('sync-status').innerHTML='<span class="spin"></span> Syncing...';
+  try{
+    var res=await fetch(url);
+    var json=await res.json();
+    if(!Array.isArray(json)||json.length===0){
+      document.getElementById('sync-status').textContent='No data found. Check sheet has rows.';
+      return;
+    }
+    allLeads=json.map(function(row,i){
+      var keys=Object.keys(row);
+      return{id:'lead_'+i,name:row[keys[0]]||'—',phone:String(row[keys[1]]||''),date:row[keys[2]]||'',description:row[keys[3]]||'',area:row[keys[4]]||''};
+    }).filter(function(l){return l.name&&l.name!=='—'&&l.name.toLowerCase()!=='customer name';});
+    showApp();
+    document.getElementById('sync-status').textContent='Synced '+allLeads.length+' leads · '+new Date().toLocaleTimeString();
+    renderStats();renderCards();
+  }catch(e){
+    document.getElementById('sync-status').textContent='Could not fetch. Check URL & deployment settings.';
+  }
+}
+
+function showApp(){
+  document.getElementById('setup-box').style.display='none';
+  document.getElementById('stats-row').style.display='flex';
+  document.getElementById('toolbar').style.display='flex';
+}
+
+function setFilter(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.flt').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+  renderCards();
+}
+
+function getStatus(id){return statuses[id]||'open';}
+
+function renderStats(){
+  var open=0,working=0,closed=0;
+  allLeads.forEach(function(l){
+    var s=getStatus(l.id);
+    if(s==='open')open++;else if(s==='working')working++;else closed++;
+  });
+  document.getElementById('stats-row').innerHTML=
+    '<div class="stat"><div class="stat-n">'+allLeads.length+'</div><div class="stat-l">Total</div></div>'+
+    '<div class="stat"><div class="stat-n" style="color:#1D4ED8">'+open+'</div><div class="stat-l">Open</div></div>'+
+    '<div class="stat"><div class="stat-n" style="color:#B45309">'+working+'</div><div class="stat-l">Working</div></div>'+
+    '<div class="stat"><div class="stat-n" style="color:#15803D">'+closed+'</div><div class="stat-l">Closed</div></div>';
+}
+
+function renderCards(){
+  var q=(document.getElementById('search').value||'').toLowerCase();
+  var filtered=allLeads.filter(function(l){
+    if(currentFilter!=='all'&&getStatus(l.id)!==currentFilter)return false;
+    if(q&&!(l.name.toLowerCase().includes(q)||l.area.toLowerCase().includes(q)||l.phone.includes(q)))return false;
+    return true;
+  });
+  var c=document.getElementById('cards-container');
+  if(filtered.length===0){c.innerHTML='<div class="empty">No leads found</div>';return;}
+  c.innerHTML=filtered.map(function(l){
+    var s=getStatus(l.id);
+    var slabel=s.charAt(0).toUpperCase()+s.slice(1);
+    var initials=l.name.split(' ').map(function(w){return w[0]||''}).join('').toUpperCase().slice(0,2);
+    var rmk=remarks[l.id]||'';
+    var dateStr=l.date?String(l.date).slice(0,10):'';
+    return '<div class="card" id="card_'+l.id+'">'
+      +'<div class="card-top">'
+      +'<div style="display:flex;gap:10px;align-items:flex-start;flex:1">'
+      +'<div class="avatar">'+initials+'</div>'
+      +'<div style="flex:1"><div class="cname">'+esc(l.name)+'</div>'
+      +'<div class="cmeta">📍 '+esc(l.area)+(dateStr?' &nbsp;·&nbsp; 📅 '+dateStr:'')+'</div></div>'
+      +'</div>'
+      +'<div class="rel"><button class="badge b-'+s+'" onclick="toggleMenu(\''+l.id+'\',this)">'+slabel+' ▾</button></div>'
+      +'</div>'
+      +'<div class="desc">'+esc(l.description)+'</div>'
+      +'<div class="card-actions">'
+      +'<a class="act-btn call" href="tel:'+l.phone+'">'
+      +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.09 9.81 19.79 19.79 0 01.02 1.12 2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>'
+      +' 📞 Call</a>'
+      +'<a class="act-btn wa" href="https://wa.me/91'+l.phone+'" target="_blank">'
+      +'<svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor"><path d="M16 3C9.373 3 4 8.373 4 15c0 2.385.67 4.61 1.832 6.51L4 29l7.695-1.793A12.94 12.94 0 0016 27c6.627 0 12-5.373 12-12S22.627 3 16 3zm6.406 17.594c-.27.758-1.584 1.477-2.16 1.541-.552.061-1.07.27-3.594-.75-3.01-1.215-4.938-4.284-5.088-4.484-.148-.199-1.207-1.609-1.207-3.07s.762-2.18 1.033-2.477c.27-.297.59-.371.787-.371.197 0 .395.002.568.01.182.009.426-.069.666.508.27.637.916 2.238.996 2.402.08.164.133.355.027.568-.107.213-.16.346-.32.533-.16.188-.336.42-.48.564-.16.16-.326.332-.14.65.187.318.832 1.371 1.787 2.221 1.229 1.097 2.266 1.438 2.584 1.598.318.16.504.133.691-.08.188-.213.8-.934 1.014-1.252.213-.318.426-.266.719-.16.293.107 1.861.879 2.18 1.039.318.16.531.24.609.373.078.133.078.758-.191 1.517z"/></svg>'
+      +' WhatsApp</a>'
+      +'<span style="font-size:12px;color:#888;margin-left:auto">📱 '+esc(l.phone)+'</span>'
+      +'</div>'
+      +'<div class="remark-row">'
+      +'<input class="remark-inp" id="rmk_'+l.id+'" placeholder="Add remark / notes..." value="'+esc(rmk)+'">'
+      +'<button class="save-btn" onclick="saveRemark(\''+l.id+'\')">Save</button>'
+      +'</div>'
+      +'<div class="remark-saved" id="rsaved_'+l.id+'">'+(rmk?'💬 '+esc(rmk):'')+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function toggleMenu(id,btn){
+  document.querySelectorAll('.status-menu').forEach(function(m){m.remove()});
+  var menu=document.createElement('div');menu.className='status-menu';
+  [['open','#1D4ED8'],['working','#B45309'],['closed','#15803D']].forEach(function(pair){
+    var b=document.createElement('button');
+    b.innerHTML='<span class="dot dot-'+pair[0]+'"></span>'+pair[0].charAt(0).toUpperCase()+pair[0].slice(1);
+    b.onclick=function(){setStatus(id,pair[0]);menu.remove();};
+    menu.appendChild(b);
+  });
+  btn.parentNode.appendChild(menu);
+  setTimeout(function(){
+    document.addEventListener('click',function h(e){if(!menu.contains(e.target)){menu.remove();document.removeEventListener('click',h);}});
+  },10);
+}
+
+function setStatus(id,s){statuses[id]=s;save();renderStats();renderCards();}
+function saveRemark(id){
+  var val=document.getElementById('rmk_'+id).value.trim();
+  remarks[id]=val;save();
+  var el=document.getElementById('rsaved_'+id);
+  if(el)el.textContent=val?'💬 '+val:'';
+}
+function save(){try{localStorage.setItem('ac_statuses',JSON.stringify(statuses));localStorage.setItem('ac_remarks',JSON.stringify(remarks));}catch(e){}}
+
+init();
+</script>
+</body>
+</html>
