@@ -7,12 +7,32 @@
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
+  #lock-screen{position:fixed;inset:0;background:#f5f5f5;z-index:9999;display:flex;align-items:center;justify-content:center}
+  .lock-box{width:100%;max-width:320px;padding:32px 24px;background:#fff;border:1px solid #eee;border-radius:20px;text-align:center;margin:16px}
+  .lock-icon{width:60px;height:60px;background:#EEF2FF;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px}
+  .lock-box h2{font-size:18px;font-weight:600;margin-bottom:6px}
+  .lock-box p{font-size:13px;color:#888;margin-bottom:22px}
+  .pin-row{display:flex;gap:12px;justify-content:center;margin-bottom:24px}
+  .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid #ddd;background:#fff;transition:all .15s}
+  .pin-dot.filled{background:#1a1a1a;border-color:#1a1a1a}
+  .pin-dot.error{background:#EF4444;border-color:#EF4444}
+  .numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:220px;margin:0 auto}
+  .num-btn{padding:15px;font-size:20px;font-weight:500;border:1px solid #eee;border-radius:12px;background:#fff;cursor:pointer;color:#1a1a1a;transition:all .1s}
+  .num-btn:hover{background:#f5f5f5}
+  .num-btn:active{transform:scale(0.93);background:#eee}
+  .num-btn.del{font-size:16px;color:#888}
+  .err{font-size:12px;color:#EF4444;margin-top:14px;min-height:16px}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+  .shake{animation:shake .4s ease}
+  #app{display:none}
   .topbar{background:#fff;padding:14px 18px;border-bottom:1px solid #e5e5e5;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100}
-  .topbar h1{font-size:17px;font-weight:600;color:#1a1a1a}
+  .topbar h1{font-size:17px;font-weight:600}
   .topbar p{font-size:12px;color:#888;margin-top:2px}
-  .sync-btn{font-size:12px;padding:7px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:500}
+  .top-btns{display:flex;gap:8px}
+  .sync-btn{font-size:12px;padding:7px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:500}
   .sync-btn:hover{background:#f5f5f5}
-  .sync-btn svg{width:13px;height:13px}
+  .lock-btn{font-size:13px;padding:7px 11px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#888;cursor:pointer}
+  .lock-btn:hover{background:#f5f5f5}
   .toolbar{background:#fff;padding:10px 18px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-bottom:1px solid #e5e5e5}
   .flt{font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid #ddd;background:#fff;color:#666;cursor:pointer;font-weight:500}
   .flt.on{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
@@ -20,13 +40,13 @@
   .search:focus{border-color:#999}
   .stats{display:flex;gap:8px;padding:14px 18px;flex-wrap:wrap;background:#f5f5f5}
   .stat{flex:1;min-width:70px;background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #eee}
-  .stat-n{font-size:24px;font-weight:600;color:#1a1a1a}
+  .stat-n{font-size:24px;font-weight:600}
   .stat-l{font-size:11px;color:#888;margin-top:2px}
-  .cards{display:flex;flex-direction:column;gap:10px;padding:0 14px 30px}
+  .cards{display:flex;flex-direction:column;gap:10px;padding:14px 14px 40px}
   .card{background:#fff;border:1px solid #eee;border-radius:12px;padding:14px 16px}
   .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
   .avatar{width:40px;height:40px;border-radius:50%;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#4F46E5;flex-shrink:0}
-  .cname{font-size:15px;font-weight:600;color:#1a1a1a}
+  .cname{font-size:15px;font-weight:600}
   .cmeta{font-size:12px;color:#888;margin-top:2px}
   .badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;cursor:pointer;border:none;white-space:nowrap}
   .b-open{background:#EFF6FF;color:#1D4ED8}
@@ -34,21 +54,20 @@
   .b-closed{background:#F0FDF4;color:#15803D}
   .desc{font-size:12px;color:#666;background:#fafafa;border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.6;border:1px solid #f0f0f0}
   .card-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .act-btn{display:flex;align-items:center;gap:5px;font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;cursor:pointer;text-decoration:none;font-weight:500}
+  .act-btn{display:flex;align-items:center;gap:5px;font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;text-decoration:none;font-weight:500;color:#1a1a1a}
   .act-btn:hover{background:#f5f5f5}
   .act-btn.call{color:#1D4ED8;border-color:#BFDBFE;background:#EFF6FF}
   .act-btn.wa{color:#15803D;border-color:#BBF7D0;background:#F0FDF4}
   .remark-row{display:flex;gap:6px;margin-top:10px;border-top:1px solid #f0f0f0;padding-top:10px}
   .remark-inp{flex:1;font-size:12px;padding:6px 9px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;outline:none}
   .remark-inp:focus{border-color:#999}
-  .save-btn{font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;cursor:pointer;font-weight:500}
+  .save-btn{font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;font-weight:500}
   .save-btn:hover{background:#f5f5f5}
   .remark-saved{font-size:11px;color:#888;font-style:italic;margin-top:5px}
   .url-setup{background:#fff;border:1px solid #eee;border-radius:12px;padding:18px;margin:14px;display:flex;flex-direction:column;gap:12px}
-  .url-setup p{font-size:14px;font-weight:600;color:#1a1a1a}
+  .url-setup p{font-size:14px;font-weight:600}
   .url-setup small{font-size:12px;color:#666;line-height:1.6}
-  .url-inp{font-size:13px;padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;width:100%;outline:none}
-  .url-inp:focus{border-color:#999}
+  .url-inp{font-size:13px;padding:8px 10px;border:1px solid #ddd;border-radius:8px;width:100%;outline:none}
   .code-block{font-size:11px;background:#f8f8f8;padding:10px 12px;border-radius:8px;display:block;margin-top:4px;line-height:1.7;white-space:pre;overflow-x:auto;border:1px solid #eee;font-family:monospace}
   .empty{text-align:center;padding:40px 20px;color:#888;font-size:13px}
   .spin{display:inline-block;width:12px;height:12px;border:2px solid #ddd;border-top-color:#888;border-radius:50%;animation:spin .7s linear infinite}
@@ -59,32 +78,63 @@
   .status-menu button:first-child{border-radius:10px 10px 0 0}
   .status-menu button:last-child{border-radius:0 0 10px 10px}
   .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-  .dot-open{background:#1D4ED8}
-  .dot-working{background:#B45309}
-  .dot-closed{background:#15803D}
+  .dot-open{background:#1D4ED8}.dot-working{background:#B45309}.dot-closed{background:#15803D}
   .rel{position:relative}
-  @media(max-width:480px){.stats{gap:6px}.stat{padding:10px 12px}.stat-n{font-size:20px}}
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div>
-    <h1>⚡ AC Repair Leads</h1>
-    <p id="sync-status">Paste your Apps Script URL below to load data</p>
+<!-- LOCK SCREEN -->
+<div id="lock-screen">
+  <div class="lock-box" id="lock-box">
+    <div class="lock-icon">🔒</div>
+    <h2>AC Repair Leads</h2>
+    <p>Enter your 6-digit PIN</p>
+    <div class="pin-row" id="pin-dots">
+      <div class="pin-dot" id="d0"></div>
+      <div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div>
+      <div class="pin-dot" id="d3"></div>
+      <div class="pin-dot" id="d4"></div>
+      <div class="pin-dot" id="d5"></div>
+    </div>
+    <div class="numpad">
+      <button class="num-btn" onclick="addPin('1')">1</button>
+      <button class="num-btn" onclick="addPin('2')">2</button>
+      <button class="num-btn" onclick="addPin('3')">3</button>
+      <button class="num-btn" onclick="addPin('4')">4</button>
+      <button class="num-btn" onclick="addPin('5')">5</button>
+      <button class="num-btn" onclick="addPin('6')">6</button>
+      <button class="num-btn" onclick="addPin('7')">7</button>
+      <button class="num-btn" onclick="addPin('8')">8</button>
+      <button class="num-btn" onclick="addPin('9')">9</button>
+      <button class="num-btn" onclick="addPin('0')" style="grid-column:2">0</button>
+      <button class="num-btn del" onclick="delPin()">⌫</button>
+    </div>
+    <div class="err" id="err-msg"></div>
   </div>
-  <button class="sync-btn" onclick="syncData()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-    Sync Sheet
-  </button>
 </div>
 
-<div class="url-setup" id="setup-box">
-  <p>🔗 Connect your Google Sheet</p>
-  <small>Follow these steps once to connect your sheet:</small>
-  <small><strong>Step 1:</strong> Open your Google Sheet → Extensions → Apps Script<br>
-  <strong>Step 2:</strong> Delete existing code and paste this:</small>
-  <code class="code-block">function doGet() {
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div>
+      <h1>⚡ AC Repair Leads</h1>
+      <p id="sync-status">Paste your Apps Script URL below</p>
+    </div>
+    <div class="top-btns">
+      <button class="sync-btn" onclick="syncData()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Sync
+      </button>
+      <button class="lock-btn" onclick="lockApp()">🔒</button>
+    </div>
+  </div>
+
+  <div class="url-setup" id="setup-box">
+    <p>🔗 Connect your Google Sheet</p>
+    <small><strong>Step 1:</strong> Google Sheet → Extensions → Apps Script → paste:</small>
+    <code class="code-block">function doGet() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
@@ -97,27 +147,79 @@
     .createTextOutput(JSON.stringify(rows))
     .setMimeType(ContentService.MimeType.JSON);
 }</code>
-  <small><strong>Step 3:</strong> Click Deploy → New Deployment → Web App<br>
-  Execute as: <strong>Me</strong> | Access: <strong>Anyone</strong> → Deploy → Copy URL</small>
-  <input class="url-inp" id="sheet-url" placeholder="https://script.google.com/macros/s/YOUR_ID/exec" />
-  <button class="sync-btn" onclick="syncData()" style="align-self:flex-start;padding:8px 16px">Load Data →</button>
-</div>
+    <small><strong>Step 2:</strong> Deploy → New Deployment → Web App → Execute as Me → Access Anyone → Copy URL</small>
+    <input class="url-inp" id="sheet-url" placeholder="https://script.google.com/macros/s/YOUR_ID/exec" />
+    <button class="sync-btn" onclick="syncData()" style="align-self:flex-start;padding:8px 16px">Load Data →</button>
+  </div>
 
-<div class="stats" id="stats-row" style="display:none"></div>
-<div class="toolbar" id="toolbar" style="display:none">
-  <button class="flt on" onclick="setFilter('all',this)">All</button>
-  <button class="flt" onclick="setFilter('open',this)">Open</button>
-  <button class="flt" onclick="setFilter('working',this)">Working</button>
-  <button class="flt" onclick="setFilter('closed',this)">Closed</button>
-  <input class="search" id="search" placeholder="Search name, area, phone..." oninput="renderCards()">
+  <div class="stats" id="stats-row" style="display:none"></div>
+  <div class="toolbar" id="toolbar" style="display:none">
+    <button class="flt on" onclick="setFilter('all',this)">All</button>
+    <button class="flt" onclick="setFilter('open',this)">Open</button>
+    <button class="flt" onclick="setFilter('working',this)">Working</button>
+    <button class="flt" onclick="setFilter('closed',this)">Closed</button>
+    <input class="search" id="search" placeholder="Search name, area, phone..." oninput="renderCards()">
+  </div>
+  <div class="cards" id="cards-container"></div>
 </div>
-<div class="cards" id="cards-container"></div>
 
 <script>
-var allLeads=[];
-var statuses={};
-var remarks={};
-var currentFilter='all';
+var PIN='786786';
+var entered='';
+
+function checkSession(){
+  try{if(sessionStorage.getItem('ac_auth')==='ok')unlock();}catch(e){}
+}
+
+function addPin(d){
+  if(entered.length>=6)return;
+  entered+=d;
+  updateDots(false);
+  if(entered.length===6)setTimeout(checkPin,120);
+}
+
+function delPin(){
+  entered=entered.slice(0,-1);
+  updateDots(false);
+  document.getElementById('err-msg').textContent='';
+}
+
+function updateDots(err){
+  for(var i=0;i<6;i++){
+    var dot=document.getElementById('d'+i);
+    dot.className='pin-dot'+(i<entered.length?' filled':'')+(err?' error':'');
+  }
+}
+
+function checkPin(){
+  if(entered===PIN){
+    try{sessionStorage.setItem('ac_auth','ok');}catch(e){}
+    unlock();
+  } else {
+    updateDots(true);
+    document.getElementById('err-msg').textContent='Wrong PIN. Try again.';
+    var box=document.getElementById('lock-box');
+    box.classList.add('shake');
+    setTimeout(function(){box.classList.remove('shake');entered='';updateDots(false);},500);
+  }
+}
+
+function unlock(){
+  document.getElementById('lock-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  init();
+}
+
+function lockApp(){
+  try{sessionStorage.removeItem('ac_auth');}catch(e){}
+  entered='';updateDots(false);
+  document.getElementById('err-msg').textContent='';
+  document.getElementById('lock-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+}
+
+// ── APP LOGIC ─────────────────────────────────────────
+var allLeads=[],statuses={},remarks={},currentFilter='all';
 
 function init(){
   try{
@@ -125,8 +227,7 @@ function init(){
     var r=localStorage.getItem('ac_remarks');if(r)remarks=JSON.parse(r);
     var u=localStorage.getItem('ac_url');if(u)document.getElementById('sheet-url').value=u;
   }catch(e){}
-  var savedUrl=document.getElementById('sheet-url').value;
-  if(savedUrl)syncData();
+  if(document.getElementById('sheet-url').value)syncData();
 }
 
 async function syncData(){
@@ -137,89 +238,73 @@ async function syncData(){
   try{
     var res=await fetch(url);
     var json=await res.json();
-    if(!Array.isArray(json)||json.length===0){
-      document.getElementById('sync-status').textContent='No data found. Check sheet has rows.';
-      return;
-    }
+    if(!Array.isArray(json)||!json.length){document.getElementById('sync-status').textContent='No data found.';return;}
     allLeads=json.map(function(row,i){
-      var keys=Object.keys(row);
-      return{id:'lead_'+i,name:row[keys[0]]||'—',phone:String(row[keys[1]]||''),date:row[keys[2]]||'',description:row[keys[3]]||'',area:row[keys[4]]||''};
+      var k=Object.keys(row);
+      return{id:'l'+i,name:row[k[0]]||'—',phone:String(row[k[1]]||''),date:row[k[2]]||'',description:row[k[3]]||'',area:row[k[4]]||''};
     }).filter(function(l){return l.name&&l.name!=='—'&&l.name.toLowerCase()!=='customer name';});
-    showApp();
+    document.getElementById('setup-box').style.display='none';
+    document.getElementById('stats-row').style.display='flex';
+    document.getElementById('toolbar').style.display='flex';
     document.getElementById('sync-status').textContent='Synced '+allLeads.length+' leads · '+new Date().toLocaleTimeString();
     renderStats();renderCards();
   }catch(e){
-    document.getElementById('sync-status').textContent='Could not fetch. Check URL & deployment settings.';
+    document.getElementById('sync-status').textContent='Error: Check URL & deployment.';
   }
-}
-
-function showApp(){
-  document.getElementById('setup-box').style.display='none';
-  document.getElementById('stats-row').style.display='flex';
-  document.getElementById('toolbar').style.display='flex';
 }
 
 function setFilter(f,btn){
   currentFilter=f;
   document.querySelectorAll('.flt').forEach(function(b){b.classList.remove('on')});
-  btn.classList.add('on');
-  renderCards();
+  btn.classList.add('on');renderCards();
 }
 
 function getStatus(id){return statuses[id]||'open';}
 
 function renderStats(){
-  var open=0,working=0,closed=0;
-  allLeads.forEach(function(l){
-    var s=getStatus(l.id);
-    if(s==='open')open++;else if(s==='working')working++;else closed++;
-  });
+  var o=0,w=0,c=0;
+  allLeads.forEach(function(l){var s=getStatus(l.id);if(s==='open')o++;else if(s==='working')w++;else c++;});
   document.getElementById('stats-row').innerHTML=
     '<div class="stat"><div class="stat-n">'+allLeads.length+'</div><div class="stat-l">Total</div></div>'+
-    '<div class="stat"><div class="stat-n" style="color:#1D4ED8">'+open+'</div><div class="stat-l">Open</div></div>'+
-    '<div class="stat"><div class="stat-n" style="color:#B45309">'+working+'</div><div class="stat-l">Working</div></div>'+
-    '<div class="stat"><div class="stat-n" style="color:#15803D">'+closed+'</div><div class="stat-l">Closed</div></div>';
+    '<div class="stat"><div class="stat-n" style="color:#1D4ED8">'+o+'</div><div class="stat-l">Open</div></div>'+
+    '<div class="stat"><div class="stat-n" style="color:#B45309">'+w+'</div><div class="stat-l">Working</div></div>'+
+    '<div class="stat"><div class="stat-n" style="color:#15803D">'+c+'</div><div class="stat-l">Closed</div></div>';
 }
 
 function renderCards(){
   var q=(document.getElementById('search').value||'').toLowerCase();
-  var filtered=allLeads.filter(function(l){
+  var list=allLeads.filter(function(l){
     if(currentFilter!=='all'&&getStatus(l.id)!==currentFilter)return false;
     if(q&&!(l.name.toLowerCase().includes(q)||l.area.toLowerCase().includes(q)||l.phone.includes(q)))return false;
     return true;
   });
   var c=document.getElementById('cards-container');
-  if(filtered.length===0){c.innerHTML='<div class="empty">No leads found</div>';return;}
-  c.innerHTML=filtered.map(function(l){
+  if(!list.length){c.innerHTML='<div class="empty">No leads found</div>';return;}
+  c.innerHTML=list.map(function(l){
     var s=getStatus(l.id);
-    var slabel=s.charAt(0).toUpperCase()+s.slice(1);
-    var initials=l.name.split(' ').map(function(w){return w[0]||''}).join('').toUpperCase().slice(0,2);
+    var ini=l.name.split(' ').map(function(w){return w[0]||''}).join('').toUpperCase().slice(0,2);
     var rmk=remarks[l.id]||'';
-    var dateStr=l.date?String(l.date).slice(0,10):'';
-    return '<div class="card" id="card_'+l.id+'">'
+    var dt=l.date?String(l.date).slice(0,10):'';
+    return '<div class="card">'
       +'<div class="card-top">'
       +'<div style="display:flex;gap:10px;align-items:flex-start;flex:1">'
-      +'<div class="avatar">'+initials+'</div>'
-      +'<div style="flex:1"><div class="cname">'+esc(l.name)+'</div>'
-      +'<div class="cmeta">📍 '+esc(l.area)+(dateStr?' &nbsp;·&nbsp; 📅 '+dateStr:'')+'</div></div>'
+      +'<div class="avatar">'+ini+'</div>'
+      +'<div><div class="cname">'+esc(l.name)+'</div>'
+      +'<div class="cmeta">📍 '+esc(l.area)+(dt?' · 📅 '+dt:'')+'</div></div>'
       +'</div>'
-      +'<div class="rel"><button class="badge b-'+s+'" onclick="toggleMenu(\''+l.id+'\',this)">'+slabel+' ▾</button></div>'
+      +'<div class="rel"><button class="badge b-'+s+'" onclick="toggleMenu(\''+l.id+'\',this)">'+s.charAt(0).toUpperCase()+s.slice(1)+' ▾</button></div>'
       +'</div>'
       +'<div class="desc">'+esc(l.description)+'</div>'
       +'<div class="card-actions">'
-      +'<a class="act-btn call" href="tel:'+l.phone+'">'
-      +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.09 9.81 19.79 19.79 0 01.02 1.12 2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>'
-      +' 📞 Call</a>'
-      +'<a class="act-btn wa" href="https://wa.me/91'+l.phone+'" target="_blank">'
-      +'<svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor"><path d="M16 3C9.373 3 4 8.373 4 15c0 2.385.67 4.61 1.832 6.51L4 29l7.695-1.793A12.94 12.94 0 0016 27c6.627 0 12-5.373 12-12S22.627 3 16 3zm6.406 17.594c-.27.758-1.584 1.477-2.16 1.541-.552.061-1.07.27-3.594-.75-3.01-1.215-4.938-4.284-5.088-4.484-.148-.199-1.207-1.609-1.207-3.07s.762-2.18 1.033-2.477c.27-.297.59-.371.787-.371.197 0 .395.002.568.01.182.009.426-.069.666.508.27.637.916 2.238.996 2.402.08.164.133.355.027.568-.107.213-.16.346-.32.533-.16.188-.336.42-.48.564-.16.16-.326.332-.14.65.187.318.832 1.371 1.787 2.221 1.229 1.097 2.266 1.438 2.584 1.598.318.16.504.133.691-.08.188-.213.8-.934 1.014-1.252.213-.318.426-.266.719-.16.293.107 1.861.879 2.18 1.039.318.16.531.24.609.373.078.133.078.758-.191 1.517z"/></svg>'
-      +' WhatsApp</a>'
+      +'<a class="act-btn call" href="tel:'+l.phone+'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.09 9.81 19.79 19.79 0 01.02 1.12 2 2 0 012 0h3a2 2 0 012 1.72c.2.96.45 1.9.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.25 1.85.5 2.81.7A2 2 0 0122 16.92z"/></svg> Call</a>'
+      +'<a class="act-btn wa" href="https://wa.me/91'+l.phone+'" target="_blank"><svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor"><path d="M16 3C9.373 3 4 8.373 4 15c0 2.385.67 4.61 1.832 6.51L4 29l7.695-1.793A12.94 12.94 0 0016 27c6.627 0 12-5.373 12-12S22.627 3 16 3zm6.406 17.594c-.27.758-1.584 1.477-2.16 1.541-.552.061-1.07.27-3.594-.75-3.01-1.215-4.938-4.284-5.088-4.484-.148-.199-1.207-1.609-1.207-3.07s.762-2.18 1.033-2.477c.27-.297.59-.371.787-.371.197 0 .395.002.568.01.182.009.426-.069.666.508.27.637.916 2.238.996 2.402.08.164.133.355.027.568-.107.213-.16.346-.32.533-.16.188-.336.42-.48.564-.16.16-.326.332-.14.65.187.318.832 1.371 1.787 2.221 1.229 1.097 2.266 1.438 2.584 1.598.318.16.504.133.691-.08.188-.213.8-.934 1.014-1.252.213-.318.426-.266.719-.16.293.107 1.861.879 2.18 1.039.318.16.531.24.609.373.078.133.078.758-.191 1.517z"/></svg> WhatsApp</a>'
       +'<span style="font-size:12px;color:#888;margin-left:auto">📱 '+esc(l.phone)+'</span>'
       +'</div>'
       +'<div class="remark-row">'
-      +'<input class="remark-inp" id="rmk_'+l.id+'" placeholder="Add remark / notes..." value="'+esc(rmk)+'">'
+      +'<input class="remark-inp" id="rmk_'+l.id+'" placeholder="Add remark..." value="'+esc(rmk)+'">'
       +'<button class="save-btn" onclick="saveRemark(\''+l.id+'\')">Save</button>'
       +'</div>'
-      +'<div class="remark-saved" id="rsaved_'+l.id+'">'+(rmk?'💬 '+esc(rmk):'')+'</div>'
+      +'<div class="remark-saved" id="rs_'+l.id+'">'+(rmk?'💬 '+esc(rmk):'')+'</div>'
       +'</div>';
   }).join('');
 }
@@ -229,28 +314,28 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function toggleMenu(id,btn){
   document.querySelectorAll('.status-menu').forEach(function(m){m.remove()});
   var menu=document.createElement('div');menu.className='status-menu';
-  [['open','#1D4ED8'],['working','#B45309'],['closed','#15803D']].forEach(function(pair){
+  ['open','working','closed'].forEach(function(s){
     var b=document.createElement('button');
-    b.innerHTML='<span class="dot dot-'+pair[0]+'"></span>'+pair[0].charAt(0).toUpperCase()+pair[0].slice(1);
-    b.onclick=function(){setStatus(id,pair[0]);menu.remove();};
+    b.innerHTML='<span class="dot dot-'+s+'"></span>'+s.charAt(0).toUpperCase()+s.slice(1);
+    b.onclick=function(){statuses[id]=s;persist();renderStats();renderCards();menu.remove();};
     menu.appendChild(b);
   });
   btn.parentNode.appendChild(menu);
-  setTimeout(function(){
-    document.addEventListener('click',function h(e){if(!menu.contains(e.target)){menu.remove();document.removeEventListener('click',h);}});
-  },10);
+  setTimeout(function(){document.addEventListener('click',function h(e){if(!menu.contains(e.target)){menu.remove();document.removeEventListener('click',h);}});},10);
 }
 
-function setStatus(id,s){statuses[id]=s;save();renderStats();renderCards();}
 function saveRemark(id){
-  var val=document.getElementById('rmk_'+id).value.trim();
-  remarks[id]=val;save();
-  var el=document.getElementById('rsaved_'+id);
-  if(el)el.textContent=val?'💬 '+val:'';
+  var v=document.getElementById('rmk_'+id).value.trim();
+  remarks[id]=v;persist();
+  var el=document.getElementById('rs_'+id);
+  if(el)el.textContent=v?'💬 '+v:'';
 }
-function save(){try{localStorage.setItem('ac_statuses',JSON.stringify(statuses));localStorage.setItem('ac_remarks',JSON.stringify(remarks));}catch(e){}}
 
-init();
+function persist(){
+  try{localStorage.setItem('ac_statuses',JSON.stringify(statuses));localStorage.setItem('ac_remarks',JSON.stringify(remarks));}catch(e){}
+}
+
+checkSession();
 </script>
 </body>
 </html>
